@@ -1,0 +1,255 @@
+assert(_CC_VERSION,"CC 1.74 or higher required")
+
+local reversemt = {}
+reversemt.__index = function(t,k)
+	for l,v in pairs(t) do
+		if v == k then return l end
+	end
+end
+
+local errors = {}
+errors.none = 0
+errors.no_input = 1
+errors.input_nonexistant = 2
+errors.input_directory = 3
+errors.missing_api = 4
+errors.output_file_exists = 5
+
+local levels = {}
+levels.error = 2
+levels.warning = 1
+levels.info = 0
+levels.success = -1
+levels.fine = -2
+
+setmetatable(errors,reversemt)
+setmetatable(levels,reversemt)
+
+local function resolve(base, path)
+	if not path then
+		path = base
+		base = (shell and shell.dir()) or fs.getDir(path)
+	end
+	local s = string.sub( path, 1, 1 )
+	if s == "/" or s == "\\" then
+		return fs.combine( "", path )
+	else
+		return fs.combine( base, path )
+	end
+end
+
+local function parse_args(args)
+	local out = {}
+	for n,arg in ipairs(args) do
+		if arg:sub(1,1) == '-' then
+			local name, value = arg:match("%-([^:]+):([^:]+)")
+			if name and value then
+				out[name] = value
+			else
+				local name = arg:match("%-([^:]+)")
+				if args[n+1] then
+					local value = args[n+1]
+					if not (value:sub(1,1) == "-") then
+						out[name] = value
+					else
+						out[name] = true
+					end
+				else
+					out[name] = true
+				end
+			end
+		else
+			if n == 1 then
+				out.open = arg
+			end
+		end
+	end
+	return out
+end
+
+local args = parse_args({...})
+
+local apipath = _G.APIPATH or ".:apis:lib:/apis:/lib:/rom/apis"
+local apiext = _G.APIEXT or ".lua"
+
+if args.o then args.output = args.o end
+if type(args.output) ~= "string" then args.output = nil end
+if args.r then args.run = args.r end
+
+local silent = args.silent
+
+local function log(msg, level)
+	local level = level or 0
+	if not silent then
+		local oldcolor = term.getTextColor()
+		if level == levels.info then
+			term.setTextColor(colors.white)
+		elseif level == levels.warning and term.isColor() then
+			term.setTextColor(colors.yellow)
+		elseif level == levels.error and term.isColor() then
+			term.setTextColor(colors.red)
+		elseif level == levels.success and term.isColor() then
+			term.setTextColor(colors.green)
+		elseif level == levels.fine then
+			term.setTextColor(colors.lightGray)
+		else
+			term.setTextColor(colors.white)
+		end
+		print(msg)
+		term.setTextColor(oldcolor)
+	end
+end
+
+--assert(args.open,"no input file specified")
+if not args.open then
+	log("no input file specified",levels.error)
+	return false, errors.no_input
+end
+local file = resolve(args.open)
+--assert(fs.exists(file),"input file does not exist")
+if not fs.exists(file) then
+	log("input file does not exist",levels.error)
+	return false, errors.input_nonexistant
+end
+--assert(not fs.isDir(file), "cannot build directory")
+if fs.isDir(file) then
+	log("cannot build a directory",levels.error)
+	return false, errors.input_directory
+end
+
+if not (args.run or (args.output and type(args.output) == "string")) then
+	log("no output action specified",levels.warning)
+end
+
+log("building file '"..file.."'")
+
+-- local include = {}
+-- local f = fs.open(file,"r")
+-- local data = f.readAll()
+-- f.close()
+
+-- -- parse file for inclusions
+-- for text in data:gmatch("@include[%s]+([^\n]+)") do
+-- 	log("found inclusion '" .. text .. "'")
+-- 	table.insert(include, text)
+-- end
+
+local include = {}
+
+local f = fs.open(file,"r")
+local text = f.readLine()
+local filedata = ""
+while text do
+	local inc = text:match("^@include[%s]+([^\n]+)$")
+	if inc then
+		--log("found inclusion '" .. inc .. "'")
+		table.insert(include, inc)
+		filedata = filedata .. "\n"
+	else
+		filedata = filedata .. text .. "\n"
+	end
+	text = f.readLine()
+end
+f.close()
+
+local function locate(current, search)
+	for spath in apipath:gmatch("([^:]+)") do
+		local spath = resolve(current,spath)
+		for ext in apiext:gmatch("([^:]+)") do
+			local path = fs.combine(spath, search .. ext)
+			if fs.exists(path) and not fs.isDir(path) then return path end
+		end
+		local path = fs.combine(spath, search)
+		if fs.exists(path) and not fs.isDir(path) then return path end
+	end
+	return
+end
+
+-- locate inclusions
+
+local incpaths = {}
+
+for i,v in ipairs(include) do
+	local path = locate(fs.getDir(file),v)
+	if path then incpaths[v] = path end
+	if (not path) and (not args.ignoreMissing) then
+		log("failed to find included api '" .. v .. "'",levels.error)
+		log("run with -ignoreMissing to build anyways",levels.error)
+		return false, errors.missing_api
+	elseif not path then
+		log("failed to find included api '" .. v .. "'",levels.warning)
+	end
+end
+
+local function escape(data)
+	data = data:gsub("\\","\\\\")
+	data = data:gsub("\"","\\\"")
+	data = data:gsub("\n","\\n")
+	data = data:gsub("\t","\\t")
+	return data
+end
+
+-- build inclusions - incomplete
+
+local built = {}
+for k,v in pairs(incpaths) do
+	log("building inclusion '" .. k .. "'",levels.fine)
+	local f = fs.open(v,"r")
+	local data = escape(f.readAll())
+	f.close()
+	built[k] = data
+	log("successfully built inclusion '" .. k .. "'",levels.fine)
+end
+
+local loader = [[for name, data in pairs(included_apis) do
+	local e = {}
+	setmetatable(e, {__index = _G})
+	load(data,name,nil,e)()
+	local api = {}
+	for k,v in pairs(e) do
+		api[k] = v
+	end
+	_ENV[name] = api
+end
+]]
+-- build output
+local output
+if #include > 0 then
+	output = "assert(_CC_VERSION,\"CC 1.74+ required\")\nlocal included_apis = {}\n"
+	for name, data in pairs(built) do
+		output = output .. "included_apis[\"".. name .. "\"] = \"" .. data .. "\"\n"
+	end
+	local packed = "return load(\""..escape(filedata).."\",\""..fs.getName(file).."\",nil,_ENV)(...)"
+	output = output .. loader .. packed
+else
+	-- no escaping/loading necessary
+	output = filedata
+end
+log("build completed",levels.success)
+
+if args.output then
+	local out_path = resolve(shell.dir(),args.output)
+	if fs.exists(out_path) and not args.overwrite then
+		log("output file already exists",levels.warning)
+		log("run with -overwrite to continue anyways",levels.warning)
+		return false, errors.output_file_exists
+	end
+	log("writing output to '" .. args.output .. "'",levels.info)
+	local fout = fs.open(out_path,"w")
+	fout.write(output)
+	fout.close()
+	log("output file written",levels.success)
+end
+
+if args.run then
+	log("running output",levels.info)
+	local ok, err = pcall(load(output,file,nil,_ENV))
+	if ok then
+		log("output ran successfully",levels.success)
+	else
+		log("output errored",levels.error)
+		log(err,levels.error)
+	end
+end
+
+return true, errors.none, output
