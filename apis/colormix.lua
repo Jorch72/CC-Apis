@@ -32,6 +32,8 @@ function gradient(a, b)
 	assert(type(a) == "table" and a.r and a.g and a.b, "invalid color #1; please create a color first")
 	assert(type(b) == "table" and b.r and b.g and b.b, "invalid color #2; please create a color first")
 	local output = {}
+	output.first = function() return a end
+	output.second = function() return b end
 	function output.mix(f)
 		local tr = math.floor(((1 - f) * a.r) + (f * b.r))
 		local tg = math.floor(((1 - f) * a.g) + (f * b.g))
