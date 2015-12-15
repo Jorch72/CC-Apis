@@ -1,4 +1,2 @@
 shell.setPath(shell.path() .. ":/bin")
 shell.setAlias("build","build.lua")
-shell.setAlias("fbuild","/Flare/bin/build")
-shell.setAlias("fdebug","/Flare/bin/debug")
