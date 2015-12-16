@@ -1,8 +1,12 @@
-function escape(str)
+function escape(str, readable)
 	str = str:gsub("\\","\\\\")
 	str = str:gsub("\"","\\\"")
-	str = str:gsub("\n","\\n")
-	str = str:gsub("\t","\\t")
+	if readable then
+		str = str:gsub("\n","\\\n")
+	else
+		str = str:gsub("\n","\\n")
+		str = str:gsub("\t","\\t")
+	end
 	return str
 end
 

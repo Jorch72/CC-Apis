@@ -1,0 +1,53 @@
+-- strings
+usage = [[usage: build <input> [options]
+OPTIONS
+  -i, -input <path>: alternate way of specifying input file
+  -o, -output <path>: save as portable executable at given path
+  -r, -run: run the output after building
+  -I, -ignoreMissing: continue build even if some apis are not found
+  -O, -overwrite: if output file exists, overwrite it
+  -?, -help: show this information]]
+apipath = [[.:apis:lib:/apis:/lib:/rom/apis]]
+apiext = [[.lua]]
+no_input = [[no input specified]]
+usage_tip = [[use -help to show usage]]
+building = [[building '%s']]
+req_string = [[local %s = require("%s")]]
+no_action = [[no action specified]]
+missing_api = [[failed to find '%s' as requested by '%s']]
+parsed = [[recursively found %i inclusion]]
+assembling = [[assembling output...]]
+syntax_err = [[syntax error in '%s']]
+build_success = [[build successful]]
+writing = [[saving output as file]]
+overwrite_err = [[output file '%s' already exists]]
+overwriting = [[output file '%s' already exists, overwriting]]
+written = [[output written successfully]]
+
+-- code
+pre_load = [[assert(_CC_VERSION or _HOST, "CC 1.74+ required!")
+local apis = {}
+local loaded = {}
+]]
+load = [[apis["%s"] = "%s"
+]]
+loadf = [[local main = "%s"
+local name = "%s"
+]]
+post_load = [[local function require(path)
+	if loaded[path] then return loaded[path] end
+	if not apis[path] then return {} end
+	local e = {}
+	e.require = require
+	setmetatable(e,{__index = _ENV})
+	load(apis[path],fs.getName(path),nil,e)()
+	local out = {}
+	for k,v in pairs(e) do
+		out[k] = v
+	end
+	return out
+end
+local e = {}
+setmetatable(e,{__index=_ENV})
+e.require = require
+return load(main, name, nil, e)(...)]]

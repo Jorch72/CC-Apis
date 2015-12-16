@@ -1,4 +1,4 @@
-assert(_CC_VERSION,"CC 1.74 or higher required")
+assert(_CC_VERSION or _HOST,"CC 1.74 or higher required")
 
 local reversemt = {}
 reversemt.__index = function(t,k)
@@ -215,7 +215,7 @@ end
 -- build output
 local output
 if #include > 0 then
-	output = "assert(_CC_VERSION,\"CC 1.74+ required\")\nlocal included_apis = {}\n"
+	output = "assert(_CC_VERSION or _HOST,\"CC 1.74+ required\")\nlocal included_apis = {}\n"
 	for name, data in pairs(built) do
 		output = output .. "included_apis[\"".. name .. "\"] = \"" .. data .. "\"\n"
 	end
