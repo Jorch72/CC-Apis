@@ -163,7 +163,11 @@ post_load = [[local function require(path)\
 	load(apis[path],fs.getName(path),nil,e)()\
 	local out = {}\
 	for k,v in pairs(e) do\
-		out[k] = v\
+		if k == \"__const\" then\
+			setmetatable(out, {__call = function(_,...) return v(...) end})\
+		else\
+			out[k] = v\
+		end\
 	end\
 	return out\
 end\

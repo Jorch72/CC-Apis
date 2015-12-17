@@ -46,15 +46,6 @@ function setColored(bool)\
 	colored = bool\
 end\
 \
--- function findAvailableFile(str)\
--- 	-- str should be formatted in this way:\
--- 	-- log_{{n}}.log\
--- 	local i = 1\
--- 	while fs.exists(str:gsub(\"{{num}}\",i)) do\
--- 		i = i + 1\
--- 	end\
--- 	return str:gsub(\"{{num}}\",i)\
--- end\
 \
 local function format(str, msg, lvl)\
 	str = str:gsub(\"{{msg}}\",msg):gsub(\"{{time}}\",os.clock()):gsub(\"{{running}}\",os.clock() - start):gsub(\"{{level}}\",levels[lvl])\
@@ -126,10 +117,10 @@ apis["apis/fsutils.lua"] = "function resolve(path, base)\
 	end\
 end"
 apis["source/b2/resources.lua"] = "-- strings\
-usage = [[usage: build <input> [options]\
+usage = [[usage: build <input> [output] [options]\
 OPTIONS\
   -i, -input <path>: alternate way of specifying input file\
-  -o, -output <path>: save as portable executable at given path\
+  -o, -output <path>: alternate way of specifying output file\
   -r, -run: run the output after building\
   -I, -ignoreMissing: continue build even if some apis are not found\
   -O, -overwrite: if output file exists, overwrite it\
@@ -137,6 +128,8 @@ OPTIONS\
 apipath = [[.:apis:lib:/apis:/lib:/rom/apis]]\
 apiext = [[.lua]]\
 no_input = [[no input specified]]\
+missing_input = [[input file non-existant]]\
+input_dir_no_main = [[cannot find main.lua in directory]]\
 usage_tip = [[use -help to show usage]]\
 building = [[building '%s']]\
 req_string = [[local %s = require(\"%s\")]]\
@@ -226,9 +219,14 @@ end\
 \
 if args.i then args.input = args.i end\
 if args.o then args.output = args.o end\
+if args.paths[1] and not args.output then args.output = args.paths[1] end\
 if args.r then args.run = args.r end\
 if args.I then args.ignoreMissing = args.I end\
 if args.O then args.overwrite = args.O end\
+\
+if args.input then\
+	args.input = fsutils.resolve(args.input, shell.dir())\
+end\
 \
 if args.output then\
 	args.output = fsutils.resolve(args.output, shell.dir())\
@@ -243,11 +241,9 @@ if not args.input then\
 	return\
 end\
 \
-local file = fsutils.resolve(args.input, shell.dir())\
-logging.log(string.format(resources.building,file),logging.levels.info)\
-\
-if not (args.output or args.run) then\
-	logging.log(resources.no_action, logging.levels.warning)\
+if not fs.exists(args.input) then\
+	logging.log(resources.missing_input, logging.levels.error)\
+	return\
 end\
 \
 local function locate(api, base)\
@@ -269,6 +265,39 @@ local function locate(api, base)\
 		if out then break end\
 	end\
 	return out\
+end\
+\
+local file\
+\
+if fs.isDir(args.input) then\
+	local main\
+	for ext in apiext:gmatch(\"([^:]+)\") do\
+		if fs.exists(fsutils.resolve(\"main\"..ext, args.input)) then\
+			main = fsutils.resolve(\"main\"..ext, args.input)\
+			break\
+		end\
+	end\
+	if not main then\
+		if fs.exists(fsutils.resolve(\"main\", args.input)) then\
+			main = fsutils.resolve(\"main\", args.input)\
+		end\
+	end\
+	if main then\
+		file = main\
+	end\
+else\
+	file = args.input\
+end\
+\
+if not file then\
+	logging.log(resources.missing_input, logging.levels.error)\
+	return\
+end\
+\
+logging.log(string.format(resources.building,file),logging.levels.info)\
+\
+if not (args.output or args.run) then\
+	logging.log(resources.no_action, logging.levels.warning)\
 end\
 \
 local function parseRecurse(file)\
@@ -343,9 +372,19 @@ if args.output then\
 end\
 \
 if args.run then\
-	logging.log()\
+	logging.log(\"running output\",logging.levels.info)\
+	local e = {}\
+	setmetatable(e, {__index = _G})\
+	local func = load(output, \"build output\", nil, e)\
+	local ok, err = pcall(func)\
+	if ok then\
+		logging.log(\"output ran successfully\", logging.levels.success)\
+	else\
+		logging.log(\"output errored\", logging.levels.error)\
+		logging.log(err, logging.levels.error)\
+	end\
 end"
-local name = "b2.lua"
+local name = "main.lua"
 local function require(path)
 	if loaded[path] then return loaded[path] end
 	if not apis[path] then return {} end
@@ -361,5 +400,5 @@ local function require(path)
 end
 local e = {}
 setmetatable(e,{__index=_ENV})
-e["require"] = require
+e.require = require
 return load(main, name, nil, e)(...)

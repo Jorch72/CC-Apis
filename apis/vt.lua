@@ -473,6 +473,8 @@ function new(isMining, fuel, timescale, onUpdate)
 	return e
 end
 
+__const = new
+
 function run(prog, args, ...)
 	local e = new(...)
 	if prog then
