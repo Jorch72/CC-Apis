@@ -1,5 +1,5 @@
 -- strings
-usage = [[usage: build <input> [output] [options]
+usage = [[usage: luac <input> [output] [options]
 OPTIONS
   -i, -input <path>: alternate way of specifying input file
   -o, -output <path>: alternate way of specifying output file

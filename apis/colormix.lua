@@ -15,6 +15,9 @@ function color(...)
 		-- number RGB
 		r, g, b = args[1], args[2], args[3]
 	end
+	r = r or 0
+	g = g or 0
+	b = b or 0
 	local output = {}
 	output.r = r
 	output.g = g
