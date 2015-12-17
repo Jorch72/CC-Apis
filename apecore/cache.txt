@@ -1,7 +1,0 @@
-# package list
-# a # symbol denotes a commented line
-# format example:
-# placeholder:1.0:[url]:[deps]
-test:1.0:[https://github.com/apemanzilla/apecore/raw/master/test_1.0.lua]:[]
-go:1.0:[https://github.com/apemanzilla/apecore/raw/master/apis/go_1.0.lua]:[]
-miner:1.0:[https://github.com/apemanzilla/apecore/raw/master/apis/miner_1.0.lua]:[go:1.0]

@@ -15,9 +15,14 @@ end
 
 if args.i then args.input = args.i end
 if args.o then args.output = args.o end
+if args.paths[1] and not args.output then args.output = args.paths[1] end
 if args.r then args.run = args.r end
 if args.I then args.ignoreMissing = args.I end
 if args.O then args.overwrite = args.O end
+
+if args.input then
+	args.input = fsutils.resolve(args.input, shell.dir())
+end
 
 if args.output then
 	args.output = fsutils.resolve(args.output, shell.dir())
@@ -32,11 +37,9 @@ if not args.input then
 	return
 end
 
-local file = fsutils.resolve(args.input, shell.dir())
-logging.log(string.format(resources.building,file),logging.levels.info)
-
-if not (args.output or args.run) then
-	logging.log(resources.no_action, logging.levels.warning)
+if not fs.exists(args.input) then
+	logging.log(resources.missing_input, logging.levels.error)
+	return
 end
 
 local function locate(api, base)
@@ -58,6 +61,39 @@ local function locate(api, base)
 		if out then break end
 	end
 	return out
+end
+
+local file
+
+if fs.isDir(args.input) then
+	local main
+	for ext in apiext:gmatch("([^:]+)") do
+		if fs.exists(fsutils.resolve("main"..ext, args.input)) then
+			main = fsutils.resolve("main"..ext, args.input)
+			break
+		end
+	end
+	if not main then
+		if fs.exists(fsutils.resolve("main", args.input)) then
+			main = fsutils.resolve("main", args.input)
+		end
+	end
+	if main then
+		file = main
+	end
+else
+	file = args.input
+end
+
+if not file then
+	logging.log(resources.missing_input, logging.levels.error)
+	return
+end
+
+logging.log(string.format(resources.building,file),logging.levels.info)
+
+if not (args.output or args.run) then
+	logging.log(resources.no_action, logging.levels.warning)
 end
 
 local function parseRecurse(file)
@@ -132,5 +168,15 @@ if args.output then
 end
 
 if args.run then
-	logging.log()
+	logging.log("running output",logging.levels.info)
+	local e = {}
+	setmetatable(e, {__index = _G})
+	local func = load(output, "build output", nil, e)
+	local ok, err = pcall(func)
+	if ok then
+		logging.log("output ran successfully", logging.levels.success)
+	else
+		logging.log("output errored", logging.levels.error)
+		logging.log(err, logging.levels.error)
+	end
 end

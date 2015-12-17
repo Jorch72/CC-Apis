@@ -1,8 +1,8 @@
 -- strings
-usage = [[usage: build <input> [options]
+usage = [[usage: build <input> [output] [options]
 OPTIONS
   -i, -input <path>: alternate way of specifying input file
-  -o, -output <path>: save as portable executable at given path
+  -o, -output <path>: alternate way of specifying output file
   -r, -run: run the output after building
   -I, -ignoreMissing: continue build even if some apis are not found
   -O, -overwrite: if output file exists, overwrite it
@@ -10,6 +10,8 @@ OPTIONS
 apipath = [[.:apis:lib:/apis:/lib:/rom/apis]]
 apiext = [[.lua]]
 no_input = [[no input specified]]
+missing_input = [[input file non-existant]]
+input_dir_no_main = [[cannot find main.lua in directory]]
 usage_tip = [[use -help to show usage]]
 building = [[building '%s']]
 req_string = [[local %s = require("%s")]]

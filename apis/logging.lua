@@ -43,15 +43,6 @@ function setColored(bool)
 	colored = bool
 end
 
--- function findAvailableFile(str)
--- 	-- str should be formatted in this way:
--- 	-- log_{{n}}.log
--- 	local i = 1
--- 	while fs.exists(str:gsub("{{num}}",i)) do
--- 		i = i + 1
--- 	end
--- 	return str:gsub("{{num}}",i)
--- end
 
 local function format(str, msg, lvl)
 	str = str:gsub("{{msg}}",msg):gsub("{{time}}",os.clock()):gsub("{{running}}",os.clock() - start):gsub("{{level}}",levels[lvl])
