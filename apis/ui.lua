@@ -30,12 +30,6 @@ function read(width, maxlen, placeholder, bg, fg, placeholdercolor)
 			s = s .. (" "):rep(width - #s)
 		end
 		term.blit(s, colorToHex(fg):rep(#s), colorToHex(bg):rep(#s))
-
-		term.setCursorPos(1,sy)
-		term.setTextColor(colors.white)
-		term.setBackgroundColor(colors.black)
-		term.write(pos .. " " .. scroll .. (" "):rep(20))
-
 		term.setCursorPos(x + pos - scroll,y)
 		term.setCursorBlink(true)
 	end
