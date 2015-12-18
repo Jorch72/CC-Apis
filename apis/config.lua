@@ -1,23 +1,25 @@
 function init(file)
-	local data
-	if fs.exists(file) and not fs.isDir(file) then
-		local f = fs.open(file,"r")
-		data = textutils.unserialize(f.readAll()) or {}
-		f.close()
-	else
-		data = {}
-		if fs.exists(file) then fs.delete(file) end
-	end
 	local out = {}
-	function out.get(key, default)
-		if data[key] ~= nil then return data[key] end
-		return default
+	local data = {}
+	if fs.exists(file) then
+		local f = fs.open(file,"r")
+		local d = f.readAll()
+		f.close()
+		if textutils.unserialize(d) then
+			data = textutils.unserialize(d)
+		end
 	end
-	function out.set(key,value)
-		data[key] = value
+	local function save()
 		local f = fs.open(file,"w")
 		f.write(textutils.serialize(data))
 		f.close()
+	end
+	function out.get(key, default)
+		return data[key] or default
+	end
+	function out.set(key, value)
+		data[key] = value
+		save()
 	end
 	return out
 end

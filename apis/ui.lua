@@ -57,6 +57,11 @@ function read(width, maxlen, placeholder, bg, fg, placeholdercolor)
 					end
 				end
 			end
+			if e[2] == keys.delete then
+				if #text > 0 and pos < #text then
+					table.remove(text, pos + 1)
+				end
+			end
 			if e[2] == keys.right then
 				if pos < #text then
 					pos = pos + 1
@@ -75,6 +80,17 @@ function read(width, maxlen, placeholder, bg, fg, placeholdercolor)
 			end
 			if e[2] == keys.enter or e[2] == keys.tab then
 				return tblToString(text), e[2] == keys.tab
+			end
+			if e[2] == keys.home then
+				pos = 0
+				scroll = 0
+			end
+			if keys.getName(e[2]) == "end" then
+				pos = #text
+				scroll = #text - width + 1
+				if scroll < 0 then
+					scroll = 0
+				end
 			end
 		end
 		draw()
