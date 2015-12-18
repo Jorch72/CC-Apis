@@ -23,3 +23,5 @@ function init(file)
 	end
 	return out
 end
+
+__const = init
