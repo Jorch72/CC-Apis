@@ -22,7 +22,7 @@ function init(file)
       end
     end,
     __newindex = function(t,k,v)
-      assert(not (type(v) == "function"),"cannot store function")
+      assert(not (type(v) == "function") and not (type(v) == "thread") ,"cannot store " .. type(v))
       rawset(proxy, k, v)
       local f = fs.open(file,"w")
       f.write(textutils.serialize(proxy))
@@ -31,3 +31,5 @@ function init(file)
   })
   return out
 end
+
+__const = init
