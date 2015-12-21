@@ -43,6 +43,13 @@ function setColored(bool)
 	colored = bool
 end
 
+function nextAvailableFile(name_pattern)
+	local n = 1
+	while fs.exists(string.format(name_pattern, n)) do
+		n = n + 1
+	end
+	return string.format(name_pattern, n)
+end
 
 local function format(str, msg, lvl)
 	str = str:gsub("{{msg}}",msg):gsub("{{time}}",os.clock()):gsub("{{running}}",os.clock() - start):gsub("{{level}}",levels[lvl])

@@ -1,3 +1,9 @@
+version = {}
+version.major = 4
+version.minor = 0
+version.patch = 0
+version.meta = "alpha"
+
 -- strings
 usage = [[usage: luac <input> [output] [options]
 OPTIONS
@@ -6,7 +12,9 @@ OPTIONS
   -r, -run: run the output after building
   -I, -ignoreMissing: continue build even if some apis are not found
   -O, -overwrite: if output file exists, overwrite it
+  -v, -version: show version information
   -?, -help: show this information]]
+version_str = string.format("luac v%s.%s.%s %s",version.major,version.minor,version.patch,version.meta)
 apipath = [[.:apis:lib:/apis:/lib:/rom/apis]]
 apiext = [[.lua]]
 no_input = [[no input specified]]
@@ -51,6 +59,8 @@ post_load = [[local function require(path)
 			out[k] = v
 		end
 	end
+	if out.require and out.require == require then out.require = nil end
+	loaded[path] = out
 	return out
 end
 local e = {}

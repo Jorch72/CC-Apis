@@ -126,8 +126,6 @@ end"
 apis["source/luac/resources.lua"] = "version = {}\
 version.major = 3\
 version.minor = 0\
-version.patch = 1\
-version.meta = \"beta\"\
 \
 -- strings\
 usage = [[usage: luac <input> [output] [options]\
@@ -139,7 +137,7 @@ OPTIONS\
   -O, -overwrite: if output file exists, overwrite it\
   -v, -version: show version information\
   -?, -help: show this information]]\
-version_str = string.format(\"luac v%s.%s.%s %s\",version.major,version.minor,version.patch,version.meta)\
+version_str = string.format(\"v%s.%s\",version.major,version.minor)\
 apipath = [[.:apis:lib:/apis:/lib:/rom/apis]]\
 apiext = [[.lua]]\
 no_input = [[no input specified]]\

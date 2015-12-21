@@ -4,12 +4,18 @@
 @include codeutils
 @include tblutils
 @include logging
+@include depman
 
 local args = args.parse({...})
 
 if args.help or args["?"] then
 	term.setTextColor(colors.white)
 	print(resources.usage)
+	return
+end
+
+if args.v or args.version then
+	logging.log(resources.version_str, logging.levels.info)
 	return
 end
 
@@ -100,7 +106,7 @@ local function parseRecurse(file)
 	local paths = {}
 	local f = fs.open(file,"r")
 	local fdata = f.readAll()
-	if not fdata:sub(#fdata) == "\n" then fdata = fdata.."\n" end
+	fdata = fdata .. "\n"
 	f.close()
 	for inclusion in fdata:gmatch("@include (%w+)\n") do
 		local p = locate(inclusion, fs.getDir(file))
