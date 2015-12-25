@@ -1,8 +1,8 @@
 version = {}
-version.major = 4
+version.major = 3
 version.minor = 0
-version.patch = 0
-version.meta = "alpha"
+version.patch = 1
+version.meta = "beta"
 
 -- strings
 usage = [[usage: luac <input> [output] [options]

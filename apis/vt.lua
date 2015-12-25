@@ -155,7 +155,7 @@ function new(isMining, fuel, timescale, onUpdate)
 	local e = {}
 	local timescale = timescale or 1
 	local moveTime, actTime = 0.5 * timescale, 0.05 * timescale
-	setmetatable(e, {__index=_G})
+	setmetatable(e, {__index=_ENV})
 	local x, y, z, f = 0, 64, 0, 0
 	local fuel = fuel or 200
 	local maxfuel = 100000

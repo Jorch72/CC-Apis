@@ -330,7 +330,7 @@ local function parseRecurse(file)\
 	local paths = {}\
 	local f = fs.open(file,\"r\")\
 	local fdata = f.readAll()\
-	if not fdata:sub(#fdata) == \"\\n\" then fdata = fdata..\"\\n\" end\
+	fdata = fdata .. \"\\n\"\
 	f.close()\
 	for inclusion in fdata:gmatch(\"@include (%w+)\\n\") do\
 		local p = locate(inclusion, fs.getDir(file))\
@@ -355,6 +355,7 @@ local function parseRecurse(file)\
 end\
 \
 local fdata, paths = parseRecurse(file)\
+\
 logging.log(string.format(resources.parsed,tblutils.count(paths))..((tblutils.count(paths) ~= 1 and \"s\") or \"\"), logging.levels.fine)\
 logging.log(resources.assembling,logging.levels.fine)\
 \

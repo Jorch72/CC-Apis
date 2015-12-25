@@ -4,7 +4,6 @@
 @include codeutils
 @include tblutils
 @include logging
-@include depman
 
 local args = args.parse({...})
 
@@ -131,6 +130,7 @@ local function parseRecurse(file)
 end
 
 local fdata, paths = parseRecurse(file)
+
 logging.log(string.format(resources.parsed,tblutils.count(paths))..((tblutils.count(paths) ~= 1 and "s") or ""), logging.levels.fine)
 logging.log(resources.assembling,logging.levels.fine)
 
